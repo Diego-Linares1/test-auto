@@ -1,0 +1,25 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UseNode@2
+  inputs:
+    versionSpec: '16.x'
+    addToPath: true
+
+- task: npm@1
+  inputs:
+    command: 'install'
+
+- task: npm@1
+  inputs:
+    command: 'run build'  # Asegúrate de que tienes un script para compilar TypeScript en package.json
+
+- task: npm@1
+  inputs:
+    command: 'run test'  # Ejecuta las pruebas
