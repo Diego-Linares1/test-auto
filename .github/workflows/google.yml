@@ -39,14 +39,14 @@ on:
       - main
 
 env:
-  PROJECT_ID: ${{ secret.PROJECT_ID }} # TODO: update to your Google Cloud project ID
-  GAR_LOCATION: ${{ secret.GAR_LOCATION }} # TODO: update to your region
-  GKE_CLUSTER: ${{ secret.GKE_CLUSTER }} # TODO: update to your cluster name
-  GKE_ZONE: ${{ secret.GKE_ZONE }} # TODO: update to your cluster zone
-  DEPLOYMENT_NAME: ${{ secret.DEPLOYMENT_NAME }} # TODO: update to your deployment name
-  REPOSITORY: ${{ secret.REPOSITORY }} # TODO: update to your Artifact Registry docker repository name
-  IMAGE: ${{ secret.IMAGE }}
-  WORKLOAD_IDENTITY_PROVIDER: ${{ secret.WORKLOAD_IDENTITY_PROVIDER }} # TODO: update to your workload identity provider
+  PROJECT_ID: ${{ secrets.PROJECT_ID }} # TODO: update to your Google Cloud project ID
+  GAR_LOCATION: ${{ secrets.GAR_LOCATION }} # TODO: update to your region
+  GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }} # TODO: update to your cluster name
+  GKE_ZONE: ${{ secrets.GKE_ZONE }} # TODO: update to your cluster zone
+  DEPLOYMENT_NAME: ${{ secrets.DEPLOYMENT_NAME }} # TODO: update to your deployment name
+  REPOSITORY: ${{ secrets.REPOSITORY }} # TODO: update to your Artifact Registry docker repository name
+  IMAGE: ${{ secrets.IMAGE }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }} # TODO: update to your workload identity provider
 
 jobs:
   setup-build-publish-deploy:
