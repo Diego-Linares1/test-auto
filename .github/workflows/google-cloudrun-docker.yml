@@ -29,11 +29,12 @@ jobs:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
       # Paso 3: Autenticación de Docker para el registro de imágenes en Google Artifact Registry
-      - name: 'Docker Auth'
+      - name: 'Authenticate to Google Cloud'
         run: |
-          echo ${{ secrets.GCP_SA_KEY }} > gcloud-service-key.json
+          echo "${{ secrets.GCP_SA_KEY }}" > gcloud-service-key.json
           gcloud auth activate-service-account --key-file=gcloud-service-key.json
           gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev"
+
 
       # Paso 4: Construir y subir la imagen Docker
       - name: 'Build and Push Container'
