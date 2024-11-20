@@ -3,7 +3,7 @@ name: Build and Deploy Docker Image to GCR
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}    # ID del proyecto en Google Cloud
   IMAGE_NAME: "my-app"                          # Nombre de la imagen Docker
-  GCR_URI: "gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app"  # URL para GCR
+  GCR_URI: "gcr.io${{ secrets.GCP_PROJECT_ID }}/my-app"  # URL para GCR
 
 on:
   push:
