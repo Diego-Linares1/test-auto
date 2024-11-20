@@ -1,49 +1,51 @@
-name: Deploy to Cloud Run
+name: Build and Deploy Docker Image to GCR
 
 env:
-  SERVICE_NAME: '${{ secrets.SERVICE_NAME }}'
-  PROJECT_ID: '${{ secrets.PROJECT_ID }}'
-  DOCKER_IMAGE_URL: '${{ secrets.URL_CLOUDRUN }}'
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}    # ID del proyecto en Google Cloud
+  IMAGE_NAME: "my-app"                          # Nombre de la imagen Docker
+  GCR_URI: "gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app"  # URL para GCR
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main   # Esto ejecutará el pipeline cuando se realicen cambios en la rama 'main'
 
 jobs:
   dockerize-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # Usa la última imagen de Ubuntu en GitHub Actions
 
     steps:
+      # Paso 1: Checkout del código fuente
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Paso 2: Autenticación en Google Cloud
       - name: Google Cloud Auth
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'  # Tu clave de servicio en GCP (almacenada como un secreto)
+          project_id: ${{ secrets.GCP_PROJECT_ID }}      # ID del proyecto en GCP
 
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: Configure Docker
+      # Paso 3: Configuración de Docker para usar GCR
+      - name: Set up Docker
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+          gcloud auth configure-docker
 
-      - name: Build and Push Docker Image
+      # Paso 4: Construir la imagen Docker
+      - name: Build Docker image
         run: |
-          docker build -t ${{ env.DOCKER_IMAGE_URL }}:latest -f Dockerfile .
-          docker push ${{ env.DOCKER_IMAGE_URL }}:latest
+          docker build -t ${{ env.GCR_URI }}:latest -f Dockerfile .
 
+      # Paso 5: Subir la imagen Docker a Google Cloud Registry
+      - name: Push Docker image to GCR
+        run: |
+          docker push ${{ env.GCR_URI }}:latest
+
+      # (Opcional) Paso 6: Desplegar la imagen en Google Cloud Run
       - name: Deploy to Cloud Run
         run: |
-          echo SERVICE_NAME $SERVICE_NAME
-          gcloud run deploy $SERVICE_NAME \
-            --image ${{ env.DOCKER_IMAGE_URL }}:latest \
+          gcloud run deploy ${{ env.IMAGE_NAME }} \
+            --image ${{ env.GCR_URI }}:latest \
             --platform managed \
-            --region us-east1 \
+            --region us-central1 \
             --allow-unauthenticated
