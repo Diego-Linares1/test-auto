@@ -6,55 +6,39 @@ on:
       - main
 
 env:
-  PROJECT_ID: "${{ secrets.PROJECT_ID }}"
-  REGION: "${{ secrets.REGION }}"
-  SERVICE: "${{ secrets.SERVICE_NAME }}"
+  PROJECT_ID: "${{ secrets.PROJECT_ID }}"  # Reemplaza con tu ID de proyecto de Google Cloud
+  REGION: "${{ secrets.REGION }}"           # Reemplaza con tu región
+  SERVICE: "${{ secrets.SERVICE_NAME }}"    # Reemplaza con el nombre de tu servicio de Cloud Run
 
 jobs:
   deploy:
     runs-on: 'ubuntu-latest'
 
-    permissions:
-      contents: 'read'
-
     steps:
-      # Paso 1: Checkout del código
       - name: 'Checkout'
-        uses: 'actions/checkout@v2'
+        uses: 'actions/checkout@v4'  # Acción para hacer checkout del repositorio
 
-      # Paso 2: Autenticarse con la cuenta de servicio de Google Cloud (actualizado a v2)
-      - name: 'Authenticate to Google Cloud'
+      - name: 'Authenticate with Google Cloud'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}  # El secreto con el JSON de la cuenta de servicio
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > gcloud-service-key.json
-          gcloud auth activate-service-account --key-file=gcloud-service-key.json
-          gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev"
+          echo "${{ secrets.GCP_SA_KEY }}" > $HOME/gcloud-service-key.json
+          gcloud auth activate-service-account --key-file=$HOME/gcloud-service-key.json
+          gcloud config set project ${{ env.PROJECT_ID }}
 
-
-      # Paso 3: Autenticación de Docker para el registro de imágenes en Google Artifact Registry
-      - name: 'Authenticate to Google Cloud'
-        run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > gcloud-service-key.json
-          gcloud auth activate-service-account --key-file=gcloud-service-key.json
-          gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev"
-
-
-      # Paso 4: Construir y subir la imagen Docker
-      - name: 'Build and Push Container'
+      - name: 'Build and Push Docker Image'
         run: |
           DOCKER_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
           docker build --tag "${DOCKER_TAG}" .
           docker push "${DOCKER_TAG}"
 
-      # Paso 5: Desplegar la imagen a Cloud Run
       - name: 'Deploy to Cloud Run'
-        id: deploy
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          service: '${{ env.SERVICE }}'
-          region: '${{ env.REGION }}'
-          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}'
-
-      # Paso 6: Mostrar la URL del servicio desplegado
-      - name: 'Show output'
         run: |
-          echo "Deployed URL: ${{ steps.deploy.outputs.url }}"
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}" \
+            --region ${{ env.REGION }} \
+            --platform managed
+
+      - name: 'Show Deployed URL'
+        run: |
+          echo "Deployed URL: https://${{ env.SERVICE }}.${{ env.REGION }}.run.app"
