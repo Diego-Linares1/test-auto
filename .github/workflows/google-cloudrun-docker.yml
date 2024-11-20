@@ -1,0 +1,55 @@
+name: 'Build and Deploy to Cloud Run'
+
+on:
+  push:
+    branches:
+      - 'main'
+
+env:
+  PROJECT_ID: '${{ secrets.PROJECT_ID }}'  # TODO: actualiza a tu ID de proyecto de Google Cloud
+  REGION: '${{ secrets.REGION }}'     # TODO: actualiza a tu región
+  SERVICE: '${{ secrets.SERVICE }}'     # TODO: actualiza a tu nombre de servicio
+
+jobs:
+  deploy:
+    runs-on: 'ubuntu-latest'
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@v4'
+
+      # Autenticación usando las credenciales de la cuenta de servicio
+      - name: 'Authenticate to Google Cloud with Service Account'
+        run: |
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > "${HOME}/gcloud-service-key.json"
+          gcloud auth activate-service-account --key-file="${HOME}/gcloud-service-key.json"
+          gcloud config set project ${{ env.PROJECT_ID }}
+
+      # Docker auth y build
+      - name: 'Docker Auth'
+        uses: 'docker/login-action@v3'
+        with:
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.auth_token }}'
+          registry: '${{ env.REGION }}-docker.pkg.dev'
+
+      - name: 'Build and Push Container'
+        run: |-
+          DOCKER_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
+          docker build --tag "${DOCKER_TAG}" .
+          docker push "${DOCKER_TAG}"
+
+      - name: 'Deploy to Cloud Run'
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: '${{ env.SERVICE }}'
+          region: '${{ env.REGION }}'
+          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}'
+
+      - name: 'Show output'
+        run: |
+          echo ${{ steps.deploy.outputs.url }}
