@@ -35,7 +35,7 @@ on:
       - main
 
 env:
-  PROJECT_ID:  'test-automatizados' # TODO: update to your Google Cloud project ID
+  PROJECT_ID:  '${{ secrets.PROJECT_ID }}' # TODO: update to your Google Cloud project ID
   REGION:  '${{ secrets.REGION }}' # TODO: update to your region
   SERVICE:  '${{ secrets.SERVICE }}' # TODO: update to your service name
   WORKLOAD_IDENTITY_PROVIDER: ' ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }} ' # TODO: update to your workload identity provider
