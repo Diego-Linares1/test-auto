@@ -62,7 +62,7 @@ jobs:
         with:
           workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}'
           project_id: '${{ env.PROJECT_ID }}'
-          service_account: 'service-account-total-github@test-automatizados.iam.gserviceaccount.com'
+          service_account: '${{ env.service_account }}'
 
       # BEGIN - Docker auth and build
       #
