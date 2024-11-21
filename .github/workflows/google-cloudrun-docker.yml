@@ -61,6 +61,7 @@ jobs:
         uses: 'google-github-actions/auth@v2' # google-github-actions/auth@v2
         with:
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          project_id: '${{ env.PROJECT_ID }}'
           service_account: 'service-account-total-github@test-automatizados.iam.gserviceaccount.com'
 
       # BEGIN - Docker auth and build
