@@ -6,10 +6,10 @@ on:
       - main
 
 env:
-  PROJECT_ID: '${{ secrets.PROJECT_ID }}'
-  REGION: '${{ secrets.REGION }}'
-  SERVICE: '${{ secrets.SERVICE }}'
-  WORKLOAD_IDENTITY_PROVIDER: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}' # Eliminados espacios adicionales
+  PROJECT_ID: '${{ secrets.PROJECT_ID }}' # ID del proyecto en Google Cloud
+  REGION: '${{ secrets.REGION }}'        # Región (e.g., us-central1)
+  SERVICE: '${{ secrets.SERVICE }}'      # Nombre del servicio en Cloud Run
+  WORKLOAD_IDENTITY_PROVIDER: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}' # Proveedor de identidad
 
 jobs:
   deploy:
@@ -20,17 +20,18 @@ jobs:
       id-token: 'write'
 
     steps:
+      # Paso 1: Checkout del código
       - name: 'Checkout'
         uses: 'actions/checkout@v4'
 
-      # Authenticate to Google Cloud
+      # Paso 2: Autenticación con Google Cloud
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}'
 
-      # Docker login
+      # Paso 3: Login en Docker
       - name: 'Docker Auth'
         uses: 'docker/login-action@v3'
         with:
@@ -38,29 +39,36 @@ jobs:
           password: '${{ steps.auth.outputs.auth_token }}'
           registry: '${{ env.REGION }}-docker.pkg.dev'
 
-      # Build and Push Docker Image
+      # Paso 4: Build y push de la imagen
       - name: 'Build and Push Container'
         run: |-
-          # Sanitizar variables
+          # Sanitizar las variables de entorno
+          echo "Original REGION: '${{ env.REGION }}'"
           REGION="${{ env.REGION }}" && REGION="${REGION// /}"
           PROJECT_ID="${{ env.PROJECT_ID }}" && PROJECT_ID="${PROJECT_ID// /}"
           SERVICE="${{ env.SERVICE }}" && SERVICE="${SERVICE// /}"
 
-          # Generar DOCKER_TAG
-          DOCKER_TAG="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE}:${{ github.sha }}"
-          echo "Generated DOCKER_TAG: ${DOCKER_TAG}"
-
-          # Validar formato del tag
-          if [[ ! "${DOCKER_TAG}" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
-            echo "Invalid DOCKER_TAG: ${DOCKER_TAG}"
+          # Validar las variables
+          if [[ -z "${REGION}" ]]; then
+            echo "Error: REGION is not set or empty."
             exit 1
           fi
 
-          # Construir y subir la imagen
+          # Construir el tag de Docker
+          DOCKER_TAG="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE}:${{ github.sha }}"
+          echo "Generated DOCKER_TAG: ${DOCKER_TAG}"
+
+          # Validar el formato del tag
+          if [[ ! "${DOCKER_TAG}" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
+            echo "Error: Invalid DOCKER_TAG format: ${DOCKER_TAG}"
+            exit 1
+          fi
+
+          # Construir y empujar la imagen
           docker build --tag "${DOCKER_TAG}" .
           docker push "${DOCKER_TAG}"
 
-      # Deploy to Cloud Run
+      # Paso 5: Desplegar en Cloud Run
       - name: 'Deploy to Cloud Run'
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
@@ -68,77 +76,8 @@ jobs:
           region: '${{ env.REGION }}'
           image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}'
 
-      # Output Cloud Run URL
-      name: 'Build and Deploy to Cloud Run'
+      # Paso 6: Mostrar la URL del servicio
+      - name: 'Show output'
+        run: |2-
 
-on:
-  push:
-    branches:
-      - main
-
-env:
-  PROJECT_ID: '${{ secrets.PROJECT_ID }}'
-  REGION: '${{ secrets.REGION }}'
-  SERVICE: '${{ secrets.SERVICE }}'
-  WORKLOAD_IDENTITY_PROVIDER: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}' # Eliminados espacios adicionales
-
-jobs:
-  deploy:
-    runs-on: 'ubuntu-latest'
-
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
-    steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@v4'
-
-      # Authenticate to Google Cloud
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
-        with:
-          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
-
-      # Docker login
-      - name: 'Docker Auth'
-        uses: 'docker/login-action@v3'
-        with:
-          username: 'oauth2accesstoken'
-          password: '${{ steps.auth.outputs.auth_token }}'
-          registry: '${{ env.REGION }}-docker.pkg.dev'
-
-      # Build and Push Docker Image
-      - name: 'Build and Push Container'
-        run: |-
-          # Sanitizar variables
-          REGION="${{ env.REGION }}" && REGION="${REGION// /}"
-          PROJECT_ID="${{ env.PROJECT_ID }}" && PROJECT_ID="${PROJECT_ID// /}"
-          SERVICE="${{ env.SERVICE }}" && SERVICE="${SERVICE// /}"
-
-          # Generar DOCKER_TAG
-          DOCKER_TAG="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE}:${{ github.sha }}"
-          echo "Generated DOCKER_TAG: ${DOCKER_TAG}"
-
-          # Validar formato del tag
-          if [[ ! "${DOCKER_TAG}" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
-            echo "Invalid DOCKER_TAG: ${DOCKER_TAG}"
-            exit 1
-          fi
-
-          # Construir y subir la imagen
-          docker build --tag "${DOCKER_TAG}" .
-          docker push "${DOCKER_TAG}"
-
-      # Deploy to Cloud Run
-      - name: 'Deploy to Cloud Run'
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          service: '${{ env.SERVICE }}'
-          region: '${{ env.REGION }}'
-          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}'
-
-      # Output Cloud Run URL
-      - name: 'Show Cloud Run URL'
-        run: echo "Cloud Run URL: ${{ steps.deploy.outputs.url }}"
+          echo ${{ steps.deploy.outputs.url }}
