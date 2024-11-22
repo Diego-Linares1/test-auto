@@ -74,7 +74,13 @@ jobs:
 
       - name: 'Build and Push Container 1'
         run: |-
-          DOCKER_TAG="us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/test-auto:${{ github.sha }}"
+          SANITIZED_REGION=$(echo "${{ env.REGION }}" | tr -d '[:space:]')
+          SANITIZED_PROJECT_ID=$(echo "${{ env.PROJECT_ID }}" | tr -d '[:space:]')
+          SANITIZED_SERVICE=$(echo "${{ env.SERVICE }}" | tr -d '[:space:]')
+      
+          DOCKER_TAG="${SANITIZED_REGION}-docker.pkg.dev/${SANITIZED_PROJECT_ID}/${SANITIZED_SERVICE}:${{ github.sha }}"
+          echo "Sanitized DOCKER_TAG: ${DOCKER_TAG}"
+
           docker build --tag "${DOCKER_TAG}" .
           docker push "${DOCKER_TAG}"
       - name: 'Deploy to Cloud Run'
