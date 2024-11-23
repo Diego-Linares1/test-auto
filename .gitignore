@@ -1,27 +1,20 @@
-# Node.js
+# Ignorar node_modules
 node_modules/
-npm-debug.log
-yarn-error.log
 
-# TypeScript
-dist/
-*.tsbuildinfo
+# Ignorar la carpeta de cobertura de pruebas (jest)
+coverage/
 
-# Logs
-logs/
-*.log
-
-# Dependencias locales de entorno
+# Ignorar archivos de entorno
 .env
 
-# Archivos de sistema
-.DS_Store
-Thumbs.db
+# Ignorar los archivos de compilación de TypeScript
+dist/
 
-# Archivos de configuración de IDEs
+# Ignorar los archivos de lock de npm (si no son necesarios para la versión exacta)
+package-lock.json
+
+# Ignorar los archivos de configuración del editor (como el de VSCode)
 .vscode/
-.idea/
 
-# Otros
-*.tgz
-*.bak
+# Ignorar los logs
+*.log
