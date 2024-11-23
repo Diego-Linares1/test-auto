@@ -1,6 +1,4 @@
-import { User } from "src/auth/domain/entities/User";
-import { UserRepository } from "src/auth/domain/repositories/UserRepository";
-import { Email } from "src/auth/domain/value-objects/Emai";
+import { UserRepository } from "../../../../domain/repositories/UserRepository";
 import pool from "../../../../../shared/infrastructure/database";
 
 export class UserRepositoryPostgres implements UserRepository {
