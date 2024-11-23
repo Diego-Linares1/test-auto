@@ -37,7 +37,7 @@ on:
 env:
   PROJECT_ID: '${{secrets.PROJECT_ID}}' # TODO: update to your Google Cloud project ID
   REGION: 'us-central1' # TODO: update to your region
-  SERVICE: '${{secrets.SERVICE}}' # TODO: update to your service name
+  REPO_NAME: '${{secrets.REPO_NAME}}' # TODO: update to your service name
   SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}'
   WORKLOAD_IDENTITY_PROVIDER: '${{secrets.WORKLOAD_IDENTITY_PROVIDER}}' # TODO: update to your workload identity provider
 
@@ -80,8 +80,8 @@ jobs:
 
       - name: 'Build and push container'
         run: |-
-         docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REGION }}/${{ env.SERVICE }}:${{ github.sha }}" ./
-         docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REGION }}/${{ env.SERVICE }}:${{ github.sha }}"
+         docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_CLOUDRUN_NAME }}:${{ github.sha }}" ./
+         docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_CLOUDRUN_NAME }}:${{ github.sha }}"
         # END - Docker auth and build
       
       - name: 'Deploy to Cloud Run'
@@ -91,7 +91,7 @@ jobs:
           region: '${{ env.REGION }}'
           # NOTE: If using a pre-built image, update the image name below:
 
-          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REGION }}/${{ env.SERVICE }}:${{ github.sha }}'
+          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_CLOUDRUN_NAME }}:${{ github.sha }}'
       # If required, use the Cloud Run URL output in later steps
       - name: 'Show output'
         run: |2-
