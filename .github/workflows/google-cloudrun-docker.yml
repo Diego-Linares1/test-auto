@@ -14,7 +14,7 @@
 #    https://support.google.com/googleapi/answer/6158841.
 #
 # 2. Create and configure a Workload Identity Provider for GitHub:
-#    https://github.com/google-github-actions/auth#preferred-direct-workload-identity-federation.
+#    https://github.com/google-github-actions/auth#preferred-direct-workload-identity-federation
 #
 #    Depending on how you authenticate, you will need to grant an IAM principal
 #    permissions on Google Cloud:
