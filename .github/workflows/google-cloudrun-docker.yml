@@ -47,7 +47,7 @@ jobs:
         with:
           args:
             -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
-            -Dsonar.organization='${{ secrets.SONAR_ORG }}'
+            -Dsonar.organization='diego-linares1'
             -Dsonar.sources=src
             -Dsonar.host.url=https://sonarcloud.io
         env:
