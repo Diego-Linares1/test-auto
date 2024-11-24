@@ -15,3 +15,5 @@ package-lock.json
 
 # Ignorar los logs
 *.log
+
+coverage/
