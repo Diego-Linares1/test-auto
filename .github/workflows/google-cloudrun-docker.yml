@@ -35,6 +35,9 @@ jobs:
       - name: 'Install dependencies'
         run: |
           npm install
+      
+      - name: Build
+        run: npx tsc
 
       - name: 'Run Tests'
         run: |
@@ -74,19 +77,16 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\": \"$message\"}" \
             ${{ secrets.SLACK_WEBHOOK_URL }}
-          
-          # Ahora enviar los resultados de Jest (asegúrate de tener el archivo test-results.json)
-          jest_results=$(jq -r '.numFailedTests' ./test-results/test-results.json)
-          if [ "$jest_results" -gt 0 ]; then
-            jest_message="Jest Tests: $jest_results tests failed."
-          else
-            jest_message="Jest Tests passed successfully."
-          fi
+        
+      - name: Send Slack Notification
+        run: npx slack-ctrf results ctrf-report.json
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-          # Enviar mensaje de Jest a Slack
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\": \"$jest_message\"}" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Send Slack Notification
+        run: npx slack-ctrf flaky ctrf-report.json
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: 'Docker Auth'
         run: |-

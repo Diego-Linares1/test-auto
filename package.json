@@ -6,7 +6,10 @@
     "start": "node dist/main.js",
     "build": "npx tsc ./src/main.ts --outDir ./dist/",
     "dev": "npx ts-node ./src/main.ts",
-    "test": "jest --json --outputFile=test-results/test-results.json"
+    "test": "jest"
+  },
+  "bin": {
+    "slack-ctrf": "./dist/cli.js"
   },
   "keywords": [],
   "author": "",
