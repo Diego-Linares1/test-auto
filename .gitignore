@@ -1,9 +1,6 @@
 # Ignorar node_modules
 node_modules/
 
-# Ignorar la carpeta de cobertura de pruebas (jest)
-coverage/
-
 # Ignorar archivos de entorno
 .env
 
