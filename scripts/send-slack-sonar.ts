@@ -29,31 +29,45 @@ const getJestResults = () => {
 };
 
 // Obtener resultados de SonarCloud
-const sonarResults = getSonarResults();
-const sonarStatus = sonarResults.projectStatus.status;
-const sonarConditions = sonarResults.projectStatus.conditions.map((cond: any) => {
-    return `*${cond.metricKey}*: ${cond.status}`;
-}).join('\n');
+let sonarResults;
+let sonarStatus = 'No disponible';
+let sonarConditions = '';
+
+try {
+    sonarResults = getSonarResults();
+    sonarStatus = sonarResults.projectStatus.status;
+    sonarConditions = sonarResults.projectStatus.conditions.map((cond: any) => {
+        return `*${cond.metricKey}*: ${cond.status}`;
+    }).join('\n');
+} catch (error) {
+    console.error('Error al obtener resultados de SonarCloud:', error);
+}
 
 // Obtener resultados de Jest
-const jestResults = getJestResults();
-const jestFailed = jestResults.numFailedTests;
-const jestPassed = jestResults.numPassedTests;
-const jestTotal = jestResults.numTotalTests;
-const jestMessage = `Jest Results: ${jestPassed} / ${jestTotal} tests passed, ${jestFailed} failed.`;
+let jestMessage = 'No disponible';
+try {
+    const jestResults = getJestResults();
+    const jestFailed = jestResults.numFailedTests;
+    const jestPassed = jestResults.numPassedTests;
+    const jestTotal = jestResults.numTotalTests;
+    jestMessage = `Jest Results: ${jestPassed} / ${jestTotal} tests passed, ${jestFailed} failed.`;
+} catch (error) {
+    console.error('Error al obtener resultados de Jest:', error);
+}
 
 // Construir el mensaje final
 const message = `
   *SonarCloud Analysis*:
   Status: ${sonarStatus}
-  ${sonarConditions}
-  
+  ${sonarConditions ? sonarConditions : 'No se pudieron obtener condiciones de SonarCloud.'}
+
   *Jest Test Results*:
   ${jestMessage}
 `;
 
 (async () => {
     try {
+        // Enviar notificación a Slack
         await slackClient.chat.postMessage({
             channel: '#general', // Cambia esto al canal deseado
             text: message,
