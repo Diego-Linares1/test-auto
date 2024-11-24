@@ -86,14 +86,14 @@ jobs:
       # Enviar resultados de Jest a Slack usando slack-ctrf
       - name: 'Send Jest Test Results to Slack'
         run: |
-          npx slack-ctrf results test-results/test-results.json
+          npx slack-ctrf results test-results.json
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       # Enviar resultados de tests fallidos a Slack usando slack-ctrf
       - name: 'Send Jest Flaky Tests to Slack'
         run: |
-          npx slack-ctrf flaky test-results/test-results.json
+          npx slack-ctrf flaky test-results.json
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
