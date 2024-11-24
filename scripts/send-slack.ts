@@ -8,16 +8,6 @@ if (!token) {
 
 const slackClient = new WebClient(token);
 
-// Función para leer resultados de SonarCloud
-const getSonarResults = () => {
-    const sonarResultsPath = 'sonar-results.json'; // Ruta del archivo de resultados
-    if (!fs.existsSync(sonarResultsPath)) {
-        throw new Error(`No se encontró el archivo ${sonarResultsPath}`);
-    }
-
-    return JSON.parse(fs.readFileSync(sonarResultsPath, 'utf-8'));
-};
-
 // Función para leer resultados de Jest
 const getJestResults = () => {
     const jestResultsPath = './test-results/test-results.json'; // Ruta del archivo de resultados
@@ -28,13 +18,6 @@ const getJestResults = () => {
     return JSON.parse(fs.readFileSync(jestResultsPath, 'utf-8'));
 };
 
-// Obtener resultados de SonarCloud
-const sonarResults = getSonarResults();
-const sonarStatus = sonarResults.projectStatus.status;
-const sonarConditions = sonarResults.projectStatus.conditions.map((cond: any) => {
-    return `*${cond.metricKey}*: ${cond.status}`;
-}).join('\n');
-
 // Obtener resultados de Jest
 const jestResults = getJestResults();
 const jestFailed = jestResults.numFailedTests;
@@ -42,12 +25,8 @@ const jestPassed = jestResults.numPassedTests;
 const jestTotal = jestResults.numTotalTests;
 const jestMessage = `Jest Results: ${jestPassed} / ${jestTotal} tests passed, ${jestFailed} failed.`;
 
-// Construir el mensaje final
+// Construir el mensaje final para Slack
 const message = `
-  *SonarCloud Analysis*:
-  Status: ${sonarStatus}
-  ${sonarConditions}
-  
   *Jest Test Results*:
   ${jestMessage}
 `;
@@ -58,7 +37,7 @@ const message = `
             channel: '#diego-ci', // Cambia esto al canal deseado
             text: message,
         });
-        console.log('Resultados de SonarCloud y Jest enviados a Slack correctamente.');
+        console.log('Resultado Jest enviado a Slack correctamente.');
     } catch (err) {
         console.error('Error al enviar notificación a Slack:', err);
     }

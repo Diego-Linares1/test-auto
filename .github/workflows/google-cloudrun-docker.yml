@@ -53,38 +53,40 @@ jobs:
             -Dsonar.sources=src
             -Dsonar.host.url=https://sonarcloud.io
 
-      - name: Fetch SonarCloud Results
+      - name: 'Fetch SonarCloud Results'
         run: |
           curl -u "${{ secrets.SONAR_TOKEN }}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${{ secrets.SONAR_PROJECTKEY }}" \
             -o sonar-results.json
         continue-on-error: true
 
-      - name: Notify via Slack
+      - name: 'Notify via Slack'
         run: |
-          npx ts-node scripts/send-slack.ts
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          # Crear mensaje para SonarCloud
+          sonar_message=$(jq -r '.issues | length' sonar-results.json)
+          if [ "$sonar_message" -gt 0 ]; then
+            message="SonarCloud Issues: $sonar_message issues found in the project."
+          else
+            message="SonarCloud Analysis passed successfully. No issues found."
+          fi
+          
+          # Enviar mensaje de SonarCloud a Slack
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$message\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+          # Ahora enviar los resultados de Jest (asegúrate de tener el archivo test-results.json)
+          jest_results=$(jq -r '.numFailedTests' ./test-results/test-results.json)
+          if [ "$jest_results" -gt 0 ]; then
+            jest_message="Jest Tests: $jest_results tests failed."
+          else
+            jest_message="Jest Tests passed successfully."
+          fi
 
-      # - name: 'Run Tests'
-      #   run: |
-      #     npm install
-      #     npm test -- --json --outputFile=results.json || echo "Tests failed" 
-      #   continue-on-error: true # Continúa aunque los tests fallen
-
-      # - name: 'Send Slack Notification'
-      #   run: |
-      #     if jq -e '.success' results.json > /dev/null; then
-      #       curl -X POST -H 'Content-type: application/json' \
-      #         --data '{"text": "✅ Tests passed in the pipeline!"}' \
-      #         ${{ secrets.SLACK_WEBHOOK_URL }}
-      #     else
-      #       curl -X POST -H 'Content-type: application/json' \
-      #         --data '{"text": "🔴 Tests failed. Please check the logs!"}' \
-      #         ${{ secrets.SLACK_WEBHOOK_URL }}
-      #     fi
-      #   env:
-      #     SLACK_WEBHOOK_URL: '${{ secrets.SLACK_WEBHOOK_URL }}'
+          # Enviar mensaje de Jest a Slack
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$jest_message\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: 'Docker Auth'
         run: |-
