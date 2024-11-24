@@ -1,32 +1,3 @@
-# This workflow build and push a Docker container to Google Artifact Registry
-# and deploy it on Cloud Run when a commit is pushed to the "main"
-# branch.
-#
-# To configure this workflow:
-#
-# 1. Enable the following Google Cloud APIs:
-#
-#    - Artifact Registry (artifactregistry.googleapis.com)
-#    - Cloud Run (run.googleapis.com)
-#    - IAM Credentials API (iamcredentials.googleapis.com)
-#
-#    You can learn more about enabling APIs at
-#    https://support.google.com/googleapi/answer/6158841.
-#
-# 2. Create and configure a Workload Identity Provider for GitHub:
-#    https://github.com/google-github-actions/auth#preferred-direct-workload-identity-federation
-#
-#    Depending on how you authenticate, you will need to grant an IAM principal
-#    permissions on Google Cloud:
-#
-#    - Artifact Registry Administrator (roles/artifactregistry.admin)
-#    - Cloud Run Developer (roles/run.developer)
-#
-#    You can learn more about setting IAM permissions at
-#    https://cloud.google.com/iam/docs/manage-access-other-resources
-#
-# 3. Change the values in the "env" block to match your values.
-
 name: 'Build and Deploy to Cloud Run'
 
 on:
@@ -40,6 +11,7 @@ env:
   REPO_NAME: '${{secrets.REPO_NAME}}' # TODO: update to your service name
   SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}'
   WORKLOAD_IDENTITY_PROVIDER: '${{secrets.WORKLOAD_IDENTITY_PROVIDER}}' # TODO: update to your workload identity provider
+  SLACK_WEBHOOK_URL: '${{secrets.SLACK_WEBHOOK_URL}}'
 
 jobs:
   deploy:
@@ -53,27 +25,32 @@ jobs:
       - name: 'Checkout'
         uses: 'actions/checkout@v4' # actions/checkout@v4
 
-      # Configure Workload Identity Federation and generate an access token.
-      #
-      # See https://github.com/google-github-actions/auth for more options,
-      # including authenticating via a JSON credentials file.
-      # - id: 'auth'
-      #   name: 'Authenticate to Google Cloud'
-      #   uses: 'google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2' # google-github-actions/auth@v2
-      #   with:
-      #     token_format: 'access_token'
-      #     workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
-      #     service_account: '${{ secrets.SERVICE_ACCOUNT }}'
-
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2' # google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_CRENDETIALS_JSON }}'
 
-      # BEGIN - Docker auth and build
-      #
-      # If you already have a container image, you can omit these steps.
+      - name: 'Run Tests'
+        run: |
+          npm install
+          npm test -- --json --outputFile=results.json || echo "Tests failed" 
+        continue-on-error: true # Continúa aunque los tests fallen
+
+      - name: 'Send Slack Notification'
+        run: |
+          if jq -e '.success' results.json > /dev/null; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text": "✅ Tests passed in the pipeline!"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+          else
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text": "🔴 Tests failed. Please check the logs!"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+          fi
+        env:
+          SLACK_WEBHOOK_URL: '${{ secrets.SLACK_WEBHOOK_URL }}'
+
       - name: 'Docker Auth'
         run: |-
           gcloud auth configure-docker '${{ secrets.REGION }}-docker.pkg.dev'
@@ -89,10 +66,8 @@ jobs:
         with:
           service: '${{ env.SERVICE_CLOUDRUN_NAME }}'
           region: '${{ env.REGION }}'
-          # NOTE: If using a pre-built image, update the image name below:
-
           image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_CLOUDRUN_NAME }}:${{ github.sha }}'
-      # If required, use the Cloud Run URL output in later steps
+
       - name: 'Show output'
         run: |2-
 
@@ -100,23 +75,11 @@ jobs:
 
       - name: Analyze with SonarCloud
 
-        # You can pin the exact commit or the version.
-        # uses: SonarSource/sonarcloud-github-action@v2.2.0
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
         with:
-          # Additional arguments for the SonarScanner CLI
           args:
-            # Unique keys of your project and organization. You can find them in SonarCloud > Information (bottom-left menu)
-            # mandatory
             -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
             -Dsonar.organization='diego-linares1'
-            # Comma-separated paths to directories containing main source files.
-            #-Dsonar.sources= # optional, default is project base directory
-            # Comma-separated paths to directories containing test source files.
-            #-Dsonar.tests= # optional. For more info about Code Coverage, please refer to https://docs.sonarcloud.io/enriching/test-coverage/overview/
-            # Adds more detail to both client and server-side analysis logs, activating DEBUG mode for the scanner, and adding client-side environment variables and system properties to the server-side log of analysis report processing.
-            #-Dsonar.verbose= # optional, default is false
-          # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: .
