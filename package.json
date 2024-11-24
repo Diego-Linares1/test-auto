@@ -6,7 +6,7 @@
     "start": "node dist/main.js",
     "build": "npx tsc ./src/main.ts --outDir ./dist/",
     "dev": "npx ts-node ./src/main.ts",
-    "test": "jest"
+    "test": "jest --json --outputFile=test-results/test-results.json"
   },
   "keywords": [],
   "author": "",
