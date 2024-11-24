@@ -35,9 +35,6 @@ jobs:
       - name: 'Install dependencies'
         run: |
           npm install
-      
-      - name: 'Build'
-        run: npx tsc
 
       - name: 'Run Tests'
         run: |
