@@ -41,7 +41,26 @@ jobs:
           npm test -- --json --outputFile=test-results.json || echo "Tests failed"
         continue-on-error: true # Continúa aunque los tests fallen
 
-      - name: 'Send Slack Notification'
+      - name: Analyze with SonarCloud
+
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
+        with:
+          args:
+            -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
+            -Dsonar.organization='diego-linares1'
+            -Dsonar.host.url=https://sonarcloud.io
+          projectBaseDir: .
+
+      - name: Fetch SonarCloud Results
+        run: |
+          curl -u "${{ secrets.SONAR_TOKEN }}:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=${{ secrets.SONAR_PROJECTKEY }}" \
+            -o sonar-results.json
+        continue-on-error: true
+
+      - name: Notify via Slack
         run: |
           npx ts-node scripts/send-slack-sonar.ts
         env:
@@ -89,13 +108,4 @@ jobs:
 
           echo ${{ steps.deploy.outputs.url }}
 
-      - name: Analyze with SonarCloud
-
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
-        with:
-          args:
-            -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
-            -Dsonar.organization='diego-linares1'
-          projectBaseDir: .
+      
