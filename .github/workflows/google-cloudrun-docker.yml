@@ -12,6 +12,7 @@ env:
   SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}'
   WORKLOAD_IDENTITY_PROVIDER: '${{secrets.WORKLOAD_IDENTITY_PROVIDER}}' # TODO: update to your workload identity provider
   SLACK_WEBHOOK_URL: '${{secrets.SLACK_WEBHOOK_URL}}'
+  SLACK_BOT_TOKEN: '${{secrets.SLACK_BOT_TOKEN}}'
 
 jobs:
   deploy:
@@ -33,23 +34,34 @@ jobs:
 
       - name: 'Run Tests'
         run: |
-          npm install
-          npm test -- --json --outputFile=results.json || echo "Tests failed" 
+          npm test -- --json --outputFile=test-results.json || echo "Tests failed" 
         continue-on-error: true # Continúa aunque los tests fallen
 
       - name: 'Send Slack Notification'
-        run: |
-          if jq -e '.success' results.json > /dev/null; then
-            curl -X POST -H 'Content-type: application/json' \
-              --data '{"text": "✅ Tests passed in the pipeline!"}' \
-              ${{ secrets.SLACK_WEBHOOK_URL }}
-          else
-            curl -X POST -H 'Content-type: application/json' \
-              --data '{"text": "🔴 Tests failed. Please check the logs!"}' \
-              ${{ secrets.SLACK_WEBHOOK_URL }}
-          fi
         env:
-          SLACK_WEBHOOK_URL: '${{ secrets.SLACK_WEBHOOK_URL }}'
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          node send-slack.js
+
+      # - name: 'Run Tests'
+      #   run: |
+      #     npm install
+      #     npm test -- --json --outputFile=results.json || echo "Tests failed" 
+      #   continue-on-error: true # Continúa aunque los tests fallen
+
+      # - name: 'Send Slack Notification'
+      #   run: |
+      #     if jq -e '.success' results.json > /dev/null; then
+      #       curl -X POST -H 'Content-type: application/json' \
+      #         --data '{"text": "✅ Tests passed in the pipeline!"}' \
+      #         ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     else
+      #       curl -X POST -H 'Content-type: application/json' \
+      #         --data '{"text": "🔴 Tests failed. Please check the logs!"}' \
+      #         ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     fi
+      #   env:
+      #     SLACK_WEBHOOK_URL: '${{ secrets.SLACK_WEBHOOK_URL }}'
 
       - name: 'Docker Auth'
         run: |-
