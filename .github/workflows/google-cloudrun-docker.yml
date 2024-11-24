@@ -32,16 +32,20 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_CRENDETIALS_JSON }}'
 
+      - name: 'Install dependencies'
+        run: |
+          npm install
+
       - name: 'Run Tests'
         run: |
-          npm test -- --json --outputFile=test-results.json || echo "Tests failed" 
+          npm test -- --json --outputFile=test-results.json || echo "Tests failed"
         continue-on-error: true # Continúa aunque los tests fallen
 
       - name: 'Send Slack Notification'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
           node send-slack.js
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # - name: 'Run Tests'
       #   run: |
