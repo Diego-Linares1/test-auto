@@ -62,7 +62,7 @@ jobs:
 
       - name: Notify via Slack
         run: |
-          npx ts-node scripts/send-slack-sonar.ts
+          npx ts-node scripts/send-slack.ts
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
