@@ -7,7 +7,7 @@ on:
 
 env:
   PROJECT_ID: '${{secrets.PROJECT_ID}}' # TODO: update to your Google Cloud project ID
-  REGION: 'us-central1' # TODO: update to your region
+  REGION: 'us-central1' # TODO: update to your region region
   REPO_NAME: '${{secrets.REPO_NAME}}' # TODO: update to your service name
   SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}'
   WORKLOAD_IDENTITY_PROVIDER: '${{secrets.WORKLOAD_IDENTITY_PROVIDER}}' # TODO: update to your workload identity provider
