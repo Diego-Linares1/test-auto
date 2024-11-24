@@ -36,7 +36,7 @@ jobs:
         run: |
           npm install
       
-      - name: Build
+      - name: 'Build'
         run: npx tsc
 
       - name: 'Run Tests'
@@ -44,18 +44,19 @@ jobs:
           npm test -- --json --outputFile=test-results.json || echo "Tests failed"
         continue-on-error: true # Continúa aunque los tests fallen
 
-      - name: Analyze with SonarCloud
-
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
+      # Análisis con SonarCloud
+      - name: 'Analyze with SonarCloud'
+        uses: SonarSource/sonarcloud-github-action@v2
         with:
           args:
             -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
-            -Dsonar.organization='diego-linares1'
+            -Dsonar.organization='${{ secrets.SONAR_ORG }}'
             -Dsonar.sources=src
             -Dsonar.host.url=https://sonarcloud.io
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      # Obtener los resultados de SonarCloud
       - name: 'Fetch SonarCloud Results'
         run: |
           curl -u "${{ secrets.SONAR_TOKEN }}:" \
@@ -63,28 +64,30 @@ jobs:
             -o sonar-results.json
         continue-on-error: true
 
-      - name: 'Notify via Slack'
+      # Notificación de SonarCloud a Slack
+      - name: 'Notify SonarCloud Issues via Slack'
         run: |
-          # Crear mensaje para SonarCloud
           sonar_message=$(jq -r '.issues | length' sonar-results.json)
           if [ "$sonar_message" -gt 0 ]; then
-            message="SonarCloud Issues: $sonar_message issues found in the project."
+            message="🚨 *SonarCloud Issues*: $sonar_message issues found in the project."
           else
-            message="SonarCloud Analysis passed successfully. No issues found."
+            message="✅ *SonarCloud Analysis*: Passed successfully. No issues found."
           fi
-          
-          # Enviar mensaje de SonarCloud a Slack
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\": \"$message\"}" \
             ${{ secrets.SLACK_WEBHOOK_URL }}
-        
-      - name: Send Slack Notification
-        run: npx slack-ctrf results ctrf-report.json
+
+      # Enviar resultados de Jest a Slack usando slack-ctrf
+      - name: 'Send Jest Test Results to Slack'
+        run: |
+          npx slack-ctrf results test-results.json
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Send Slack Notification
-        run: npx slack-ctrf flaky ctrf-report.json
+      # Enviar resultados de tests fallidos a Slack usando slack-ctrf
+      - name: 'Send Jest Flaky Tests to Slack'
+        run: |
+          npx slack-ctrf flaky test-results.json
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
