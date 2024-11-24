@@ -19,13 +19,15 @@
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/pg": "^8.11.10",
+    "@types/yargs": "^17.0.33",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.1",
     "postgres": "^3.4.5",
     "ts-dotenv": "^0.9.1",
-    "ts-postgres": "^2.0.4"
+    "ts-postgres": "^2.0.4",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

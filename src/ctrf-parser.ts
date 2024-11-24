@@ -1,4 +1,4 @@
-import fs from 'fs';
+import * as fs from 'fs';
 import { CtrfReport } from '../types/ctrf';
 
 export const parseCtrfFile = (filePath: string): CtrfReport => {
