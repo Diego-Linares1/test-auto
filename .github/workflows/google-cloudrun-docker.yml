@@ -43,7 +43,7 @@ jobs:
 
       - name: 'Send Slack Notification'
         run: |
-          node send-slack.js
+          node scripts/send-slack.js
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
