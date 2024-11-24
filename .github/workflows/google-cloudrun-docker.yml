@@ -36,6 +36,9 @@ jobs:
         run: |
           npm install
 
+      - name: Install slack-ctrf
+        run: npm install slack-ctrf
+
       - name: 'Run Tests'
         run: |
           npm test -- --json --outputFile=test-results.json || echo "Tests failed"
