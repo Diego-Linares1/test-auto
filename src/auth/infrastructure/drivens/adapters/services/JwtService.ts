@@ -1,5 +1,4 @@
 import * as jwt from "jsonwebtoken";
-import { User } from "../../../../domain/entities/User";
 
 export class JwtService {
     private secret: string;

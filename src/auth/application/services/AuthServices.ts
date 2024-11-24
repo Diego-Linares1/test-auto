@@ -1,6 +1,5 @@
 import { UserRepository } from "../../domain/repositories/UserRepository";
 import { JwtService } from "../../../auth/infrastructure/drivens/adapters/services/JwtService";
-import { User } from "../../domain/entities/User";
 
 export class AuthService {
     private userRepository: UserRepository;
