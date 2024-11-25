@@ -39,12 +39,15 @@ jobs:
       - name: 2. Instalar Slack-ctrf para personalizar reportes en slack
         run: npm install slack-ctrf
 
-      - name: 'Run Tests'
+      - name: 3. Run Tests
         run: |
           npm test
         continue-on-error: true # Continúa aunque los tests fallen
 
-      - name: 3. Análisis con SonarCloud
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc
+
+      - name: 4. Análisis con SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216 # uses: SonarSource/sonarcloud-github-action@v2.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
@@ -54,7 +57,7 @@ jobs:
             -Dsonar.organization='diego-linares1'
             -Dsonar.sources=src
 
-      - name: 4. Obtener los resultados de SonarCloud
+      - name: 5. Obtener los resultados de SonarCloud
         run: |
           curl -u "${{ secrets.SONAR_TOKEN }}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${{ secrets.SONAR_PROJECTKEY }}" \
@@ -72,6 +75,20 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\": \"$message\"}" \
             ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Generate PDF
+        run: |
+          sudo apt-get install -y pandoc
+          jq '.' sonar-results.json > sonar-results.txt
+          pandoc sonar-results.txt -o sonar-results.pdf
+
+      - name: Send PDF to Slack
+        run: |
+          curl -F file=@sonar-results.pdf \
+               -F "initial_comment=Resultados de SonarCloud" \
+               -F channels=${{ secrets.SLACK_CHANNEL_ID }} \
+               -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+               https://slack.com/api/files.upload
 
       # Enviar resultados de Jest a Slack usando slack-ctrf
       - name: 'Send Jest Test Results to Slack'
