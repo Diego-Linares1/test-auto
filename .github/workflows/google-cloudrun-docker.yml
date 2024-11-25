@@ -50,7 +50,6 @@ jobs:
       - name: Install TeX Live
         run: sudo apt-get install -y texlive texlive-latex-extra
 
-
       - name: 4. Análisis con SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216 # uses: SonarSource/sonarcloud-github-action@v2.2.0
         env:
