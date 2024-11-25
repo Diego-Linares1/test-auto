@@ -6,12 +6,12 @@ on:
       - main
 
 env:
-  PROJECT_ID: '${{secrets.PROJECT_ID}}' # TODO: update to your Google Cloud project ID
-  REGION: 'us-central1' # TODO: update to your region region
-  REPO_NAME: '${{secrets.REPO_NAME}}' # TODO: update to your service name
-  SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}'
+  PROJECT_ID: '${{secrets.PROJECT_ID}}' # Google Cloud Project ID
+  REGION: 'us-central1' # GCP Region - Artifact Registry, Cloud Run
+  REPO_NAME: '${{secrets.REPO_NAME}}' # Nombre del Repositorio de Artifact Registry
+  SERVICE_CLOUDRUN_NAME: '${{secrets.SERVICE_CLOUDRUN_NAME}}' # Nombre del Repositorio de Cloud Run
   WORKLOAD_IDENTITY_PROVIDER: '${{secrets.WORKLOAD_IDENTITY_PROVIDER}}' # TODO: update to your workload identity provider
-  SLACK_WEBHOOK_URL: '${{secrets.SLACK_WEBHOOK_URL}}'
+  SLACK_WEBHOOK_URL: '${{secrets.SLACK_WEBHOOK_URL}}' 
   SLACK_BOT_TOKEN: '${{secrets.SLACK_BOT_TOKEN}}'
 
 jobs:
@@ -32,46 +32,36 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_CRENDETIALS_JSON }}'
 
-      - name: 'Install dependencies'
+      - name: 1. Instalar dependencias
         run: |
           npm install
-
-      - name: Install slack-ctrf
+      
+      - name: 2. Instalar Slack-ctrf para personalizar reportes en slack
         run: npm install slack-ctrf
 
       - name: 'Run Tests'
         run: |
-          npm test -- --json --outputFile=test-results.json || echo "Tests failed"
+          npm test
         continue-on-error: true # Continúa aunque los tests fallen
 
-      # Análisis con SonarCloud
-      - name: Analyze with SonarCloud
-
-        # You can pin the exact commit or the version.
-        # uses: SonarSource/sonarcloud-github-action@v2.2.0
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
+      - name: 3. Análisis con SonarCloud
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216 # uses: SonarSource/sonarcloud-github-action@v2.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
         with:
-          # Additional arguments for the SonarScanner CLI
           args:
-            # Unique keys of your project and organization. You can find them in SonarCloud > Information (bottom-left menu)
-            # mandatory
             -Dsonar.projectKey='${{ secrets.SONAR_PROJECTKEY }}'
             -Dsonar.organization='diego-linares1'
             -Dsonar.sources=src
-            -Dsonar.host.url=https://sonarcloud.io
 
-      # Obtener los resultados de SonarCloud
-      - name: 'Fetch SonarCloud Results'
+      - name: 4. Obtener los resultados de SonarCloud
         run: |
           curl -u "${{ secrets.SONAR_TOKEN }}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${{ secrets.SONAR_PROJECTKEY }}" \
             -o sonar-results.json
         continue-on-error: true
 
-      # Notificación de SonarCloud a Slack
-      - name: 'Notify SonarCloud Issues via Slack'
+      - name: 5. Notificación de SonarCloud a Slack
         run: |
           sonar_message=$(jq -r '.issues | length' sonar-results.json)
           if [ "$sonar_message" -gt 0 ]; then
