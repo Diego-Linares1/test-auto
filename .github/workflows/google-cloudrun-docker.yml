@@ -41,7 +41,7 @@ jobs:
 
       - name: 3. Run Tests
         run: |
-          npm test -- --json --outputFile=test-results/test-results.json
+          npm test
         continue-on-error: true # Continúa aunque los tests fallen
 
       - name: 4. Análisis con SonarCloud
