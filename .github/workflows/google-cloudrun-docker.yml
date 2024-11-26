@@ -77,7 +77,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          RESULTS=$(cat jest-results.json)
+          RESULTS=$(cat test-results/test-results.json)
           PASSED=$(echo $RESULTS | jq '.numPassedTests')
           FAILED=$(echo $RESULTS | jq '.numFailedTests')
           TOTAL=$(echo $RESULTS | jq '.numTotalTests')
