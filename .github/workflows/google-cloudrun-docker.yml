@@ -41,14 +41,8 @@ jobs:
 
       - name: 3. Run Tests
         run: |
-          npm test
+          npm test -- --json --outputFile=jest-results.json
         continue-on-error: true # Continúa aunque los tests fallen
-
-      - name: Install Pandoc
-        run: sudo apt-get install -y pandoc
-
-      - name: Install TeX Live
-        run: sudo apt-get install -y texlive texlive-latex-extra
 
       - name: 4. Análisis con SonarCloud
         uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216 # uses: SonarSource/sonarcloud-github-action@v2.2.0
@@ -67,7 +61,7 @@ jobs:
             -o sonar-results.json
         continue-on-error: true
 
-      - name: 5. Notificación de SonarCloud a Slack
+      - name: 6. Notificación de SonarCloud a Slack
         run: |
           sonar_message=$(jq -r '.issues | length' sonar-results.json)
           if [ "$sonar_message" -gt 0 ]; then
@@ -79,33 +73,27 @@ jobs:
             --data "{\"text\": \"$message\"}" \
             ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Generate PDF
-        run: |
-          sudo apt-get install -y pandoc
-          jq '.' sonar-results.json > sonar-results.txt
-          pandoc sonar-results.txt -o sonar-results.pdf
-
-      - name: Send PDF to Slack
-        run: |
-          curl -F file=@sonar-results.pdf \
-               -F "initial_comment=Resultados de SonarCloud" \
-               -F channels=${{ secrets.SLACK_CHANNEL_ID }} \
-               -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-               https://slack.com/api/files.upload
-
-      # Enviar resultados de Jest a Slack usando slack-ctrf
-      - name: 'Send Jest Test Results to Slack'
-        run: |
-          npx slack-ctrf results test-results/test-results.json
+      - name: 7. Parsear y enviar los resultados de Jest a Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      # Enviar resultados de tests fallidos a Slack usando slack-ctrf
-      - name: 'Send Jest Flaky Tests to Slack'
         run: |
-          npx slack-ctrf flaky test-results/test-results.json
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RESULTS=$(cat jest-results.json)
+          PASSED=$(echo $RESULTS | jq '.numPassedTests')
+          FAILED=$(echo $RESULTS | jq '.numFailedTests')
+          TOTAL=$(echo $RESULTS | jq '.numTotalTests')
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"text\": \"*Test Results:*
+            Total: $TOTAL
+            Passed: $PASSED
+            Failed: $FAILED\"
+          }" $SLACK_WEBHOOK_URL
+        
+      - name: Upload Jest results artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jest-results
+          path: jest-results.json
+          
 
       - name: 'Docker Auth'
         run: |-
