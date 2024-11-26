@@ -35,6 +35,9 @@ jobs:
       - name: 1. Instalar dependencias
         run: |
           npm install
+
+      - name: 1.1 Instalar jest-json-reporter
+        run: npm install jest-json-reporter --save-dev
       
       - name: 2. Instalar Slack-ctrf para personalizar reportes en slack
         run: npm install slack-ctrf
