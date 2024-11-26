@@ -6,6 +6,15 @@
 import type {Config} from 'jest';
 
 const config: Config = {
+  reporters: [
+    "default", // Mantiene el reporte estándar en la consola
+    [
+      "jest-json-reporter",
+      {
+        outputFile: "./jest-results.json", // Ruta para guardar los resultados
+      },
+    ],
+  ],
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
