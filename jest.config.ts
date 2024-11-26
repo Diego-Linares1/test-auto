@@ -11,7 +11,7 @@ const config: Config = {
     [
       "jest-json-reporter",
       {
-        outputFile: "./jest-results.json", // Ruta para guardar los resultados
+        outputFile: ".test-results/test-results.json", // Ruta para guardar los resultados
       },
     ],
   ],
